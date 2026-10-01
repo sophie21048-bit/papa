@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>С днём рождения, Олег!</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;
+  background:#030106;color:#fff;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+body{display:grid;place-items:center}
+#scene{
+  position:relative;width:100%;height:100%;min-height:100svh;
+  overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(circle at 50% 46%,rgba(255,20,117,.12),transparent 24%),
+    radial-gradient(circle at 50% 70%,rgba(112,0,76,.18),transparent 42%),
+    #030106;
+}
+#scene:before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(transparent 96%,rgba(255,46,145,.07) 100%);
+  background-size:100% 6px;opacity:.28
+}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.message{
+  position:absolute;left:50%;top:54%;width:min(92vw,700px);
+  transform:translate(-50%,-50%);text-align:center;
+  pointer-events:none;text-shadow:0 0 22px rgba(255,22,123,.4);
+  animation:messageIn 1.8s cubic-bezier(.2,.8,.2,1) both
+}
+.eyebrow{
+  margin:0 0 10px;font-size:clamp(10px,1.6vw,13px);
+  letter-spacing:.45em;color:#ff9fca;opacity:.85
+}
+h1{
+  margin:0;font-size:clamp(34px,8vw,78px);line-height:.92;
+  font-weight:900;letter-spacing:.03em
+}
+h1 span{
+  color:#fff;text-shadow:0 0 5px #fff,0 0 18px #ff2f92,
+  0 0 42px #ff0b6e,0 0 80px rgba(255,0,110,.8)
+}
+.subtitle{
+  margin:18px auto 0;font-size:clamp(13px,2.2vw,19px);
+  line-height:1.5;color:#ffd7ea;max-width:520px
+}
+button{
+  margin-top:20px;border:1px solid rgba(255,119,182,.7);
+  border-radius:999px;padding:10px 22px;color:#fff;
+  background:rgba(255,31,126,.12);
+  box-shadow:inset 0 0 18px rgba(255,24,126,.15),0 0 24px rgba(255,24,126,.16);
+  backdrop-filter:blur(8px);font:inherit;cursor:pointer;pointer-events:auto;
+  transition:transform .2s,background .2s
+}
+button:hover{transform:scale(1.05);background:rgba(255,31,126,.25)}
+.hint{
+  position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+  color:rgba(255,210,233,.55);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;animation:pulse 2s infinite
+}
+@keyframes messageIn{
+  from{opacity:0;transform:translate(-50%,-44%) scale(.94)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@keyframes pulse{50%{opacity:.3}}
+</style>
+</head>
+
+<body>
+<main id="scene">
+  <canvas id="canvas"></canvas>
+
+  <section class="message">
+    <p class="eyebrow">СЕГОДНЯ ОСОБЕННЫЙ ДЕНЬ</p>
+    <h1>С ДНЁМ РОЖДЕНИЯ,<br><span>ОЛЕГ!</span></h1>
+    <p class="subtitle">
+      Пусть этот год будет ярким,<br>
+      счастливым и полным крутых моментов ✨
+    </p>
+    <button id="replay" type="button">Ещё раз ♥</button>
+  </section>
+
+  <div class="hint">Нажми на экран</div>
+</main>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const scene=document.getElementById("scene");
+const replay=document.getElementById("replay");
+
+let W=0,H=0,dpr=1;
+let stars=[],sparks=[];
+let startTime=performance.now();
+let burst=0;
+
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  W=scene.clientWidth;
+  H=scene.clientHeight;
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  stars=Array.from(
+    {length:Math.min(850,Math.floor(W*H/1100))},
+    ()=>({
+      a:Math.random()*Math.PI*2,
+      r:Math.random()**.62,
+      z:.15+Math.random()*.85,
+      tw:Math.random()*Math.PI*2
+    })
+  );
+}
+
+function heartPoint(t,scale){
+  const x=16*Math.sin(t)**3;
+  const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+  return{x:x*scale,y:y*scale};
+}
+
+function drawGlowHeart(cx,cy,scale,alpha=1){
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.globalCompositeOperation="lighter";
+
+  for(let glow=34;glow>=2;glow-=8){
+    ctx.beginPath();
+    for(let i=0;i<=240;i++){
+      const p=heartPoint(i/240*Math.PI*2,scale);
+      if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    ctx.lineWidth=Math.max(1,glow/5);
+    ctx.strokeStyle=`rgba(255,25,130,${alpha*.025})`;
+    ctx.shadowBlur=glow;
+    ctx.shadowColor="#ff147e";
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  for(let i=0;i<=240;i++){
+    const p=heartPoint(i/240*Math.PI*2,scale);
+    if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+  }
+  ctx.closePath();
+  ctx.lineWidth=2.2;
+  ctx.strokeStyle=`rgba(255,170,216,${alpha})`;
+  ctx.shadowBlur=18;
+  ctx.shadowColor="#ff1590";
+  ctx.stroke();
+  ctx.restore();
+}
+
+function spawnBurst(x,y,amount=70){
+  for(let i=0;i<amount;i++){
+    const a=Math.random()*Math.PI*2;
+    const speed=1+Math.random()*5;
+    sparks.push({
+      x,y,
+      vx:Math.cos(a)*speed,
+      vy:Math.sin(a)*speed,
+      life:1,
+      size:.6+Math.random()*2.8
+    });
+  }
+}
+
+function draw(t){
+  const time=(t-startTime)/1000;
+  ctx.clearRect(0,0,W,H);
+
+  const bg=ctx.createRadialGradient(
+    W/2,H*.48,0,W/2,H*.48,Math.max(W,H)*.72
+  );
+  bg.addColorStop(0,"rgba(87,0,54,.30)");
+  bg.addColorStop(.38,"rgba(25,0,22,.18)");
+  bg.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(W/2,H*.45);
+
+  for(const s of stars){
+    const angle=s.a+time*(.07+s.z*.08);
+    const radius=s.r*Math.min(W,H)*.72;
+    const x=Math.cos(angle)*radius;
+    const y=Math.sin(angle)*radius*.34;
+    const twinkle=.35+.65*(.5+.5*Math.sin(time*2+s.tw));
+    const size=.5+1.7*s.z;
+    ctx.fillStyle=`rgba(255,${90+Math.floor(100*s.z)},${160+Math.floor(70*s.z)},${twinkle*s.z})`;
+    ctx.fillRect(x,y,size,size);
+  }
+  ctx.restore();
+
+  const cx=W/2;
+  const cy=H*.45+Math.sin(time*1.2)*5;
+  const base=Math.min(W,H);
+
+  ctx.save();
+  ctx.translate(cx,cy+base*.16);
+  ctx.scale(1,.22);
+  ctx.rotate(time*.18);
+
+  for(let i=0;i<8;i++){
+    ctx.beginPath();
+    ctx.ellipse(0,0,base*(.23+i*.055),base*(.23+i*.055));
+    ctx.strokeStyle=`rgba(255,20,125,${.16-i*.012})`;
+    ctx.lineWidth=1.2;
+    ctx.shadowBlur=12;
+    ctx.shadowColor="#ff167f";
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const pulse=1+Math.sin(time*2.5)*.035;
+  drawGlowHeart(cx,cy,base*.014*pulse,1);
+
+  ctx.save();
+  ctx.translate(cx,cy+base*.16);
+  ctx.scale(1,.35);
+
+  for(let i=0;i<90;i++){
+    const a=time*(.18+(i%7)*.008)+i*.73;
+    const r=base*(.18+((i*37)%100)/100*.28);
+    const x=Math.cos(a)*r;
+    const y=Math.sin(a)*r;
+    const size=1+(i%3);
+    ctx.fillStyle=`rgba(255,${100+i%100},190,.55)`;
+    ctx.fillRect(x,y,size,size);
+  }
+  ctx.restore();
+
+  for(let i=0;i<18;i++){
+    const a=time*(.16+i*.004)+i;
+    const r=base*(.24+(i%6)*.055);
+    const x=cx+Math.cos(a)*r;
+    const y=cy+base*.12+Math.sin(a)*r*.34;
+    drawGlowHeart(x,y,Math.max(1.1,base*.0022),.45);
+  }
+
+  if(burst>0){
+    ctx.fillStyle=`rgba(255,30,130,${burst*.06})`;
+    ctx.fillRect(0,0,W,H);
+    burst*=.92;
+  }
+
+  sparks=sparks.filter(p=>p.life>.02);
+
+  for(const p of sparks){
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vx*=.985;
+    p.vy=p.vy*.985+.015;
+    p.life*=.965;
+
+    ctx.fillStyle=`rgba(255,105,180,${p.life})`;
+    ctx.shadowBlur=10;
+    ctx.shadowColor="#ff1685";
+    ctx.fillRect(p.x,p.y,p.size,p.size);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+function celebrate(x=W/2,y=H*.45){
+  startTime=performance.now();
+  burst=1;
+  spawnBurst(x,y,120);
+}
+
+window.addEventListener("resize",resize);
+
+scene.addEventListener("pointerdown",e=>{
+  if(e.target===replay)return;
+  celebrate(e.clientX,e.clientY);
+});
+
+replay.addEventListener("click",()=>celebrate());
+
+resize();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
